@@ -36,11 +36,13 @@ export class TransactionService{
             throw new Error('Valor da transição deve ser positivo.');
         }
 
-        return this.repository.update(id, data);
+        return this.repository.update(id, userId, data);
     }
 
     async delete(id: string, userId: string) {
         await this.getById(id, userId);
         return this.repository.delete(id, userId);
     }
+
+   
 }
