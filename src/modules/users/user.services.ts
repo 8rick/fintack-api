@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserRepository } from "./user.repository";
-import { CreateUserDTO, AuthResponseDTO } from "./user.type";
+import { CreateUserDTO, AuthResponseDTO, LoginDTO } from "./user.type";
 
 export class UserService {
   private repository = new UserRepository();
@@ -50,15 +50,35 @@ export class UserService {
     };
   }
 
-  private generateToken(userId: string): string {
-    const secret = process.env.JWT_SECRET;
+  async login(data: LoginDTO): Promise<AuthResponseDTO> {
+     const user = await this.repository.findByEmail(data.email);
 
-    if (!secret) {
-      throw new Error("JWT_SECRET não definido");
-    }
+     if(!user) {
+        throw new Error('Email ou senha incorretos.');
+     }
 
-    const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
+     const passwordHash = await bcrypt.compare(data.password, user.password);
 
-    return jwt.sign({ sub: userId }, secret, { expiresIn });
+     if(!passwordHash) {
+        throw new Error('Emmail ou senhas incorretos.');
+     }
+
+     const token = this.generateToken(user.id);
+
+     return {
+        token, 
+        user: {
+            id: user.id, 
+            name: user.name,
+            email: user.email,
+        },
+     };
   }
+
+    private generateToken(userId: string): string {
+     const secret = process.env.JWT_SECRET!;
+     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+     return jwt.sign({ userId }, secret, { expiresIn });
+    }
 }
