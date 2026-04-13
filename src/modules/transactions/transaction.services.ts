@@ -11,6 +11,10 @@ export class TransactionService{
             throw new Error('O valor da transação deve ser positivo.');
         }
 
+        if(!['INCOME', 'EXPENSE'].includes(data.type)) {
+            throw new Error('Tipo inválido. Use INCOME ou EXPENSE.');
+        }
+
         const transaction = await this.repository.create(data);
         return transaction;
     }
