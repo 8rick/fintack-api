@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 
 import transactionRoutes from './modules/transactions/transaction.route';
+import userRoutes from './modules/users/user.routes';
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ app.get('/health', (req,res) => {
         message: 'Fintack Ai no ar 🚀',
     });
 });
+
+app.use('/auth', userRoutes)
 
 app.use('/transactions', transactionRoutes);
 
