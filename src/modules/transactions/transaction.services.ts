@@ -1,6 +1,7 @@
 import { TransactionRepository } from "./transaction.repository";
 import { CreatingTransationDTO, UpdateTransactionDTO } from './transaction.types';
-
+import { AiService } from "../ai_analyst/ai.services";
+import { catego }
 export class TransactionService{
 
     private repository = new TransactionRepository();
