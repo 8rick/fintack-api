@@ -60,15 +60,15 @@ Formato de resposta obrigatório:
           role: 'user',
           content: `Analise os gastos do usuário dos últimos ${input.periodDays} dias:
 
-TOTAL GASTO: R$${input.totalSpent.toFixed(2)}
+          TOTAL GASTO: R$${input.totalSpent.toFixed(2)}
 
-GASTOS POR CATEGORIA:
-${spendingBreaKdown}
+          GASTOS POR CATEGORIA:
+          ${spendingBreaKdown}
 
-TRANSAÇÕES RECENTES:
-${transactionsList}
+          TRANSAÇÕES RECENTES:
+          ${transactionsList}
 
-Forneça uma análise detalhada com insights e sugestões de economia.`,
+          Forneça uma análise detalhada com insights e sugestões de economia.`,
          },
         ],
       });
@@ -99,17 +99,17 @@ Forneça uma análise detalhada com insights e sugestões de economia.`,
                 {
                     role: 'system',
                     content: `Você é um classificador financeiro. 
-Dado uma descrição de transação e uma lista de categorias disponíveis,
-responda APENAS com o nome exato de uma das categorias fornecidas.
-Não escreva mais nada além do nome da categoria.`,
+                      Dado uma descrição de transação e uma lista de categorias disponíveis,
+                      responda APENAS com o nome exato de uma das categorias fornecidas.
+                      Não escreva mais nada além do nome da categoria.`,
                 },
 
                 {
                     role: 'user',
                     content: `Transação: "${input.description}" no valor de R${input.amount.toFixed(2)}
                     
-Categorias disponíveis: ${input.avaliableCategory.join(', ')}
-Qual categoria melhor descreve essa transação?`,
+                     Categorias disponíveis: ${input.avaliableCategory.join(', ')}
+                     Qual categoria melhor descreve essa transação?`,
                     
                 },
             ],  
