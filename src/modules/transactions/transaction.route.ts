@@ -7,6 +7,16 @@ const service = new TransactionService();
 
 router.use(authMiddleware);
 
+router.get('/analysis', async (req, res) => {
+    try {
+        const userId = req.user!.userId;
+        const result = await service.analyzeUserSpending(userId);
+        return res.status(201).json(result);
+    } catch(error: any) {
+        return res.status(400).json({ error: error.message });
+    }
+});
+
 router.post('/', async(req, res) => {
     try{
         
