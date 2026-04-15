@@ -1,25 +1,98 @@
 import { TransactionRepository } from "./transaction.repository";
 import { CreatingTransationDTO, UpdateTransactionDTO } from './transaction.types';
 import { AiService } from "../ai_analyst/ai.services";
-import { catego }
+import { CategoryRepository } from "../categories/category.repository";
 export class TransactionService{
-
     private repository = new TransactionRepository();
 
-    async create(data: CreatingTransationDTO) {
+    private aiService = new AiService();
 
+    async create(data: CreatingTransationDTO) {
         if(data.amount <= 0){
             throw new Error('O valor da transação deve ser positivo.');
         }
-
+             //Lucro           //Dspesa
         if(!['INCOME', 'EXPENSE'].includes(data.type)) {
             throw new Error('Tipo inválido. Use INCOME ou EXPENSE.');
         }
 
         const transaction = await this.repository.create(data);
+        
+        if(data.type === 'EXPENSE' && !data.categoryId) {
+
+            //fire and forget
+            this.categoriZarEmBackgorund(transaction.id, {
+                description: data.descrption,
+                amount: data.amount,
+            }).catch(err => {
+                console.error('Erro na categorização automática: ', err);
+            });
+        }
+
         return transaction;
     }
 
+    private async categoriZarEmBackgorund(
+        transactionId: string,
+        data: { descrition: string; amount: number}
+    ) {
+        const categoriasPadrao = [
+            'Alimentação', 'Transporte', 'Moradia', 'Saúde',
+            'Lazer', 'Educação', 'Vestuário', 'Emergência', 'Outros',
+        ];
+
+        const categoriaSugerida = await this.aiService.categorizeTransaction({
+            description: data.descrition,
+            amount: data.amount,
+            avaliableCategory: categoriasPadrao,
+        });
+
+        await this.repository.update(transactionId, {
+            aiSuggestion: categoriaSugerida,
+        });
+    }
+
+    aysnc analyzeUserSpending(userId: string) {
+        const transactions = await this.repository.findRecentForAiContext(userId, 20);
+
+        if(transactions.length === 0) {
+            throw new Error('Você prcisa passar pelo menos uma transação para análise.')
+        }
+
+        const totalSpent = transactions.reduce((acc, t) => acc + t.amount, 0);
+
+        const spendingByCategory = transactions.reduce((acc, t) => {
+            const categoria = t.category?.name || 'Sem categoria';
+            acc[categoria] = (acc[categoria] || 0) + t.amount;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const transactionsForAi = transactions.map(t => ({
+            description: t.description,
+            amount: t.amount,
+            category: t.category?.name || 'Sem categoria',
+
+           Date: t.date.toLocaleDateString('pt-BR'),
+        }));
+
+        const analysis = await this.aiService.analyzeSpending({
+            totalSpent,
+            periodDays: 30, 
+            spedingByCategory,
+            transictions: transactionsForAi,
+        });
+
+        return {
+            analysis,
+            data: {
+                totalSpent,
+                transictionCount: transactions.length,
+                spendingByCategory,
+            },
+        };
+    }
+
+    
     async listByUser(userId: string) {
         return this.repository.findAllByUser(userId);
     }
