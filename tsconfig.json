@@ -9,6 +9,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "teste-gemini.ts"],
   "exclude": ["node_modules", "dist"]
 }

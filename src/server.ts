@@ -1,10 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 
+dotenv.config();
+
 import transactionRoutes from './modules/transactions/transaction.route';
 import userRoutes from './modules/users/user.routes';
 
-dotenv.config();
 
 const app = express();
 

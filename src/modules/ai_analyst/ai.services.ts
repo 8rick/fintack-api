@@ -1,13 +1,30 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AiAnalysisInput, AiAnalysisOutput, AiCategorizationInput } from "./ai.types";
 
 export class AiService {
 
-    private client = new OpenAI({
-        apiKey: process.env.OPEN_AI_KEY,
-    });
+    private client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-    private model = 'gpt-5-nano';
+    constructor() {
+    const key = process.env.GEMINI_API_KEY;
+    console.log('Chave Gemini carregada:', key ? `${key.substring(0, 8)}...` : 'UNDEFINED');
+    // substring(0, 8) → mostra só os primeiros 8 caracteres
+    // Suficiente para confirmar que carregou sem expor a chave inteira
+  }
+
+    private model = this.client.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+
+     systemInstruction: `Você é um consultor financeiro pessoal especializado 
+em finanças para brasileiros. Sua comunicação é direta, empática e prática.
+
+REGRAS IMPORTANTES:
+- Responda SEMPRE em JSON válido, sem texto fora do JSON
+- Não use markdown, não use blocos de código, não use crases
+- Use valores em Reais (R$)
+- Seja específico e actionable nas sugestões
+- Não julgue os gastos, apenas analise e sugira melhorias`,
+  });
 
     async analyzeSpending(input: AiAnalysisInput): Promise<AiAnalysisInput> {
 
@@ -27,94 +44,67 @@ export class AiService {
            .map(t => `- ${t.date}: ${t.description} - R${t.amount.toFixed(2)} (${t.category})`) 
            .join(`\n`);
            
-        const completion = await this.client.chat.completions.create({
-            model: this.model,
+       const prompt = `Analise os gastos do usuário dos últimos ${input.periodDays} dias:
 
-            temperature: 0.7,
+       TOTAL GASTO: ${input.totalSpent.toFixed(2)}
 
-            max_tokens: 1000,
+       GASTOS POR CATEGORIA:
+       ${spendingBreaKdown}
 
-            messages: [
-              {
+       TRANSAÇÕES RECENTES:
+       ${transactionsList}
 
-                role: 'system',
-                content: `Você é um consultor financeiro pessoal especializado
-                em finanças para brasileiros. Sua comunicação é direta, empática e prática.
-
-REGRAS IMPORTANTES:
-- Responda SEMPRE em JSON válido, sem texto fora do JSON
-- Use valores em Reais (R$)
-- Seja específico e actionable nas sugestões
-- Não julgue os gastos, apenas analise e sugira melhorias
-
-Formato de resposta obrigatório:
+       Responda APENAS com este JSON, sem nenhum texto antes ou depois:
 {
   "summary": "resumo geral em 2-3 frases",
   "insights": ["insight 1", "insight 2", "insight 3"],
   "suggestions": ["sugestão concreta 1", "sugestão concreta 2", "sugestão concreta 3"],
-  "biggestExpenseCategory": "nome da categoria"
-}`,
-              },
-                {
-          
-          role: 'user',
-          content: `Analise os gastos do usuário dos últimos ${input.periodDays} dias:
+  "biggestExpenseCategory": "nome da categoria com maior gasto"
+}`;
 
-          TOTAL GASTO: R$${input.totalSpent.toFixed(2)}
+      const result = await this.model.generateContent(prompt);
 
-          GASTOS POR CATEGORIA:
-          ${spendingBreaKdown}
+      const responseText = result.response.text();
 
-          TRANSAÇÕES RECENTES:
-          ${transactionsList}
-
-          Forneça uma análise detalhada com insights e sugestões de economia.`,
-         },
-        ],
-      });
-
-      const responseText = completion.choices[0].message.content || '{}';
+      const cleanText = responseText
+         .replace(/```json\n?/g, '')
+         .replace(/```/g, '')
+         .trim();
 
       try{
-        const parsed = JSON.parse(responseText) as AiAnalysisOutput;
-        return parsed;
+        return JSON.parse(cleanText) as AiAnalysisOutput;
       } catch {
          return {
-            summary: responseText,
+            summary: cleanText,
             insights: [],
             suggestions: [],
-            biggestExpenseCategory: 'Não indetificado',
+            biggestExpenseCategory: 'Não identificado',
          };
       }
     } 
 
     async categorizeTransaction(input: AiCategorizationInput): Promise<string> {
 
-        const completion = await this.client.chat.completions.create({
-            model: this.model,
-            temperature: 0,
+        const categorizationModel = this.client.getGenerativeModel({
+          model: 'gemini-1.5-flash',
+      systemInstruction: `Você é um classificador financeiro.
+Dado uma descrição de transação e uma lista de categorias,
+responda APENAS com o nome exato de uma das categorias fornecidas.
+Não escreva mais nada além do nome da categoria.`,
 
-            max_tokens: 50,
-            messages: [
-                {
-                    role: 'system',
-                    content: `Você é um classificador financeiro. 
-                      Dado uma descrição de transação e uma lista de categorias disponíveis,
-                      responda APENAS com o nome exato de uma das categorias fornecidas.
-                      Não escreva mais nada além do nome da categoria.`,
-                },
+      generationConfig: {
+        temperature: 0,      
+        maxOutputTokens: 20, 
+        },
+      })
+      
+      const prompt = `Transação: "${input.description}" no valor de R$${input.amount.toFixed(2)}
+Categorias disponíveis: ${input.avaliableCategory.join(', ')}
+Qual categoria melhor descreve essa transação?`;
 
-                {
-                    role: 'user',
-                    content: `Transação: "${input.description}" no valor de R${input.amount.toFixed(2)}
-                    
-                     Categorias disponíveis: ${input.avaliableCategory.join(', ')}
-                     Qual categoria melhor descreve essa transação?`,
-                    
-                },
-            ],  
-        });
+    const result = await categorizationModel.generateContent(prompt);
+    return result.response.text().trim();
 
-        return completion.choices[0].message.content?.trim() || 'Outros';
+
     }
 }
