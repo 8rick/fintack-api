@@ -4,14 +4,14 @@ import { AiAnalysisInput, AiAnalysisOutput, AiCategorizationInput } from "./ai.t
 export class AiService {
 
     private client = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: process.env.OPEN_AI_KEY,
     });
 
-    private model = 'gpt-4o-mini';
+    private model = 'gpt-5-nano';
 
     async analyzeSpending(input: AiAnalysisInput): Promise<AiAnalysisInput> {
 
-        const spendingBreaKdown = Object.entries(input.spedingByCategory)
+        const spendingBreaKdown = Object.entries(input.spendingByCategory)
 
           .map(([category, amount]) => {
 

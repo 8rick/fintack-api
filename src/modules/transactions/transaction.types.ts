@@ -1,7 +1,7 @@
 export type TransactionType = 'INCOME' | 'EXPENSE';
 
 export interface CreatingTransationDTO {
-    descrption?: string;
+    description?: string;
     amount: number;
     type: TransactionType;
     date?: Date;

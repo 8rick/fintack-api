@@ -8,21 +8,31 @@ export class TransactionService{
     private aiService = new AiService();
 
     async create(data: CreatingTransationDTO) {
+
         if(data.amount <= 0){
             throw new Error('O valor da transação deve ser positivo.');
         }
+         if(!data.type) {
+            throw new Error('O tipo de transação é obrigatório.');
+         }
+
+        const normalizedType = data.type.toUpperCase() as 'INCOME' | 'EXPENSE';
+
              //Lucro           //Dspesa
-        if(!['INCOME', 'EXPENSE'].includes(data.type)) {
+        if(!['INCOME', 'EXPENSE'].includes(normalizedType)) {
             throw new Error('Tipo inválido. Use INCOME ou EXPENSE.');
         }
 
-        const transaction = await this.repository.create(data);
+        const transaction = await this.repository.create({
+            ...data,
+            type: normalizedType,
+        });
         
-        if(data.type === 'EXPENSE' && !data.categoryId) {
+        if(normalizedType === 'EXPENSE' && !data.categoryId) {
 
             //fire and forget
             this.categoriZarEmBackgorund(transaction.id, {
-                description: data.descrption,
+                description: data.description,
                 amount: data.amount,
             }).catch(err => {
                 console.error('Erro na categorização automática: ', err);
@@ -32,9 +42,10 @@ export class TransactionService{
         return transaction;
     }
 
+
     private async categoriZarEmBackgorund(
         transactionId: string,
-        data: { descrition: string; amount: number}
+        data: { description: string; amount: number}
     ) {
         const categoriasPadrao = [
             'Alimentação', 'Transporte', 'Moradia', 'Saúde',
@@ -42,7 +53,7 @@ export class TransactionService{
         ];
 
         const categoriaSugerida = await this.aiService.categorizeTransaction({
-            description: data.descrition,
+            description: data.description,
             amount: data.amount,
             avaliableCategory: categoriasPadrao,
         });
@@ -52,7 +63,7 @@ export class TransactionService{
         });
     }
 
-    aysnc analyzeUserSpending(userId: string) {
+    async analyzeUserSpending(userId: string) {
         const transactions = await this.repository.findRecentForAiContext(userId, 20);
 
         if(transactions.length === 0) {
@@ -64,7 +75,7 @@ export class TransactionService{
         const spendingByCategory = transactions.reduce((acc, t) => {
             const categoria = t.category?.name || 'Sem categoria';
             acc[categoria] = (acc[categoria] || 0) + t.amount;
-            return acc;
+            return acc; 
         }, {} as Record<string, number>);
 
         const transactionsForAi = transactions.map(t => ({
@@ -78,7 +89,7 @@ export class TransactionService{
         const analysis = await this.aiService.analyzeSpending({
             totalSpent,
             periodDays: 30, 
-            spedingByCategory,
+            spendingByCategory,
             transictions: transactionsForAi,
         });
 

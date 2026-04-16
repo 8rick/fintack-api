@@ -3,7 +3,7 @@ export interface AiAnalysisInput {
 
     periodDays: number;
 
-    spedingByCategory: Record<string, number>;
+    spendingByCategory: Record<string, number>;
 
     transictions: Array<{
         description: string;
