@@ -54,4 +54,22 @@ export class ReportRepository {
         });
         return result;
     }
+
+    async findCategoriesByIds(categoryIds: string[]) {
+
+    return prisma.category.findMany({
+      where: {
+        // in → equivalente ao SQL: WHERE id IN ('id1', 'id2', 'id3')
+        // Busca todos os registros cujo id está no array
+        id: { in: categoryIds },
+      },
+      // select → especifica quais campos retornar
+      // Equivalente ao SELECT id, name FROM categories
+      // Sem select, viria todos os campos (incluindo userId, createdAt)
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
 }
