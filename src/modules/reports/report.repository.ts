@@ -73,25 +73,4 @@ export class ReportRepository {
     });
   }
 
-   async transactionsInPeriod(
-    userId: string,
-    startDate: Date,
-    endDate: Date
-  ) {
-
-    return prisma.transaction.findMany({
-      where: {
-        userId,
-        date: { gte: startDate, lte: endDate },
-      },
-      // select → trazemos só o que precisamos para montar o histórico
-      // Menos campos = menos dados trafegando = mais rápido
-      select: {
-        amount: true,
-        type: true,
-        date: true,
-      },
-      orderBy: { date: 'asc' },
-    });
-  }
 }
