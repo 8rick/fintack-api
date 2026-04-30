@@ -87,21 +87,15 @@ export class ReportRepository {
     return result;
   }
 
-  // ─── BUSCAR NOMES DAS CATEGORIAS ─────────────────────
-  // groupBy retorna apenas os IDs das categorias
-  // Precisamos de uma segunda query para buscar os nomes
-  // Esse padrão se chama "N+1 query resolution"
+  
   async findCategoriesByIds(categoryIds: string[]) {
 
     return prisma.category.findMany({
       where: {
-        // in → equivalente ao SQL: WHERE id IN ('id1', 'id2', 'id3')
-        // Busca todos os registros cujo id está no array
+     
         id: { in: categoryIds },
       },
-      // select → especifica quais campos retornar
-      // Equivalente ao SELECT id, name FROM categories
-      // Sem select, viria todos os campos (incluindo userId, createdAt)
+      
       select: {
         id: true,
         name: true,
@@ -109,10 +103,7 @@ export class ReportRepository {
     });
   }
 
-  // ─── HISTÓRICO DOS ÚLTIMOS N MESES ───────────────────
-  // Retorna as transações agrupadas por mês
-  // Vamos buscar as transações brutas e agrupar no Node
-  // porque SQLite tem suporte limitado a funções de data
+  
   async transactionsInPeriod(
     userId: string,
     startDate: Date,
@@ -124,8 +115,7 @@ export class ReportRepository {
         userId,
         date: { gte: startDate, lte: endDate },
       },
-      // select → trazemos só o que precisamos para montar o histórico
-      // Menos campos = menos dados trafegando = mais rápido
+      
       select: {
         amount: true,
         type: true,
