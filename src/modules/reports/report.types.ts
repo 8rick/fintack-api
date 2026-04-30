@@ -1,5 +1,4 @@
 
-
 export interface MonthlySummary {
     totalIncome: number;
 
