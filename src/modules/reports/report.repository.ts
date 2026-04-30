@@ -51,10 +51,10 @@ export class ReportRepository {
         date: { gte: startDate, lte: endDate },
       },
 
-      // _sum → soma o amount dentro de cada grupo
+     
       _sum: { amount: true },
 
-      // _count → conta quantos registros há em cada grupo
+      
       _count: { id: true },
 
      
