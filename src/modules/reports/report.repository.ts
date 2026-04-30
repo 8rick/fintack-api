@@ -11,7 +11,7 @@ export class ReportRepository {
     endDate: Date
   ): Promise<number> {
 
-    const result = await prisma.transaction.aggregate({
+    const result = await prisma.transactions.aggregate({
      
       _sum: {
         amount: true,
@@ -40,7 +40,7 @@ export class ReportRepository {
   ) {
 
     
-    const result = await prisma.transaction.groupBy({
+    const result = await prisma.transactions.groupBy({
      
       by: ['categoryId'],
 
@@ -89,7 +89,7 @@ export class ReportRepository {
     endDate: Date
   ) {
 
-    return prisma.transaction.findMany({
+    return prisma.transactions.findMany({
       where: {
         userId,
         date: { gte: startDate, lte: endDate },
